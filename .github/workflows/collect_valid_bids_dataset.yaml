@@ -64,7 +64,9 @@ jobs:
           node-version: '18.17.0'
 
       - name: Install OpenNeuro CLI
-        run: npm install @openneuro/cli
+        run: | 
+          npm install -g @openneuro/cli
+          echo {"url":"https://openneuro.org/","apikey":"${{ secrets.OPENNEURO_API_KEY }}","errorReporting":false} > ~/.openneuro 
 
       - name: Install BIDS Validator
         run: npm install -g bids-validator
@@ -78,10 +80,7 @@ jobs:
 
       - name: Collect BIDS Dataset
         if: ${{ steps.cache-dataset.outputs.cache-hit != 'true' }} && ${{ !env.ACT }}
-        run: |
-          touch ~/.openneuro
-          echo {"url":"https://openneuro.org/","apikey":"${{ secrets.OPENNEURO_API_KEY }}","errorReporting":false} > ~/.openneuro
-          ./node_modules/.bin/openneuro download --snapshot 1.0.1 ds004564 ds004564
+        run: openneuro download --snapshot 1.0.1 ds004564 ds004564
 
       - name: Check Dataset with JS Validator
         run: bids-validator ds004564
