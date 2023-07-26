@@ -64,7 +64,7 @@ jobs:
           node-version: '18.17.0'
 
       - name: Install OpenNeuro CLI
-        run: npm install -g @openneuro/cli
+        run: npm install @openneuro/cli
 
       - name: Install BIDS Validator
         run: npm install -g bids-validator
@@ -81,7 +81,7 @@ jobs:
         run: |
           touch ~/.openneuro
           echo {"url":"https://openneuro.org/","apikey":"${{ secrets.OPENNEURO_API_KEY }}","errorReporting":false} > ~/.openneuro
-          openneuro download --snapshot 1.0.1 ds004564 ds004564
+          ./node_modules/.bin/openneuro download --snapshot 1.0.1 ds004564 ds004564
 
       - name: Check Dataset with JS Validator
         run: bids-validator ds004564
