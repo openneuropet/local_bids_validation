@@ -60,6 +60,8 @@ jobs:
 
       - name: Set Up Node
         uses: actions/setup-node@v3
+        with:
+          node-version: '18.17.0'
 
       - name: Install OpenNeuro CLI
         run: npm install -g @openneuro/cli
