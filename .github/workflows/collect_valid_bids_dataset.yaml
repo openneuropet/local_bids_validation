@@ -1,0 +1,86 @@
+name: collect_valid_bids_dataset
+on:
+  workflow_call:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        type: boolean
+        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
+        required: false
+        default: false
+
+jobs:
+  phantoms:
+    runs-on: ${{ matrix.os }}
+    env:
+      DCM2NIIX_WIN_PATH: dcm2niix_win/dcm2niix.exe
+      MATLAB_CODE_PATH: ${{ github.workspace }}/matlab/
+      METADATA_PATH: ${{ github.workspace }}/metadata/
+
+    strategy:
+      matrix:
+        os: [ubuntu-20.04]
+        python: ["3.8", "3.9", "3.10", "3.11"]
+      fail-fast: false
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
+
+      - name: Cache Node Posix
+        if: runner.os != 'Windows' && !env.ACT
+        uses: actions/cache@v3
+        with:
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ env.cache-name }}
+
+      - name: Cache Dataset
+        if: ${{ !env.ACT }}
+        id: dataset-cache
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-dataset
+        with:
+          path: ds004564
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('ds004564') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ env.cache-name }}-
+            ${{ runner.os }}- 
+          
+      - name: Set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python }}
+          cache: 'pip'
+          cache-dependency-path: |
+            local_bids_validation/pyproject.toml
+
+      - name: Set Up Node
+        uses: actions/setup-node@v3
+
+      - name: Install OpenNeuro CLI
+        run: npm install -g @openneuro/cli
+
+      - name: Install BIDS Validator
+        run: npm install -g bids-validator
+
+      - name: Collect BIDS Dataset
+        if: ${{ steps.cache-dataset.outputs.cache-hit != 'true' }} && ${{ !env.ACT }}
+        run: openneuro download --snapshot 1.0.1 ds004564 ds004564
+
+      - name: Check Dataset with JS Validator
+        run: bids-validator ds004564
+
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        timeout-minutes: 15
+        with:
+          limit-access-to-actor: true
