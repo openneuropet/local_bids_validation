@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "local-bids-validation"
+version = "0.0.0"
+description = "Python wrapped bids-validator, inspects what falls under .bidsignore, etc"
+authors = ["Cyril Pernet <wamcyril@gmail.com>", "Anthony Galassi <28850131+bendhouseart@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "local_bids_validation"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+bids-validator = "^1.12.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
