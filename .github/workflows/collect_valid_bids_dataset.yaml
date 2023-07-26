@@ -76,7 +76,10 @@ jobs:
 
       - name: Collect BIDS Dataset
         if: ${{ steps.cache-dataset.outputs.cache-hit != 'true' }} && ${{ !env.ACT }}
-        run: openneuro download --snapshot 1.0.1 ds004564 ds004564
+        run: |
+          touch ~/.openneuro
+          echo {"url":"https://openneuro.org/","apikey":"${{ secrets.OPENNEURO_API_KEY }}","errorReporting":false} > ~/.openneuro
+          openneuro download --snapshot 1.0.1 ds004564 ds004564
 
       - name: Check Dataset with JS Validator
         run: bids-validator ds004564
