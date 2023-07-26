@@ -55,10 +55,10 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
           cache: 'pip'
-          cache-dependency-path: ${{ github.workspace }}/pyproject.toml
+          cache-dependency-path: requirements.txt
       
       - name: Install Python Dependencies
-        run: pip install ${{ github.workspace }}/pyproject.toml    
+        run: pip install -r ${{ github.workspace }}/requirements.txt
 
       - name: Set Up Node
         uses: actions/setup-node@v3
