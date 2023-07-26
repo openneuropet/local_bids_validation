@@ -17,12 +17,8 @@ on:
         default: false
 
 jobs:
-  phantoms:
+  validate_bids_dataset:
     runs-on: ${{ matrix.os }}
-    env:
-      DCM2NIIX_WIN_PATH: dcm2niix_win/dcm2niix.exe
-      MATLAB_CODE_PATH: ${{ github.workspace }}/matlab/
-      METADATA_PATH: ${{ github.workspace }}/metadata/
 
     strategy:
       matrix:
