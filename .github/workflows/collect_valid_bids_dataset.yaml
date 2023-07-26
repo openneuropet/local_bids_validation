@@ -66,7 +66,8 @@ jobs:
       - name: Install OpenNeuro CLI
         run: | 
           npm install -g @openneuro/cli
-          echo {"url":"https://openneuro.org/","apikey":"${{ secrets.OPENNEURO_API_KEY }}","errorReporting":false} > ~/.openneuro 
+          apikey="$(jq '.apikey = "${{ secrets.OPENNEURO_API_KEY }}"' ~/.openneuro)" 
+          echo -E "$apikey" > ~/.openneuro
 
       - name: Install BIDS Validator
         run: npm install -g bids-validator
