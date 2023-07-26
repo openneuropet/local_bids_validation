@@ -67,6 +67,13 @@ jobs:
       - name: Install BIDS Validator
         run: npm install -g bids-validator
 
+      - name: Debug
+        uses: mxschmitt/action-tmate@v3
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        timeout-minutes: 15
+        with:
+          limit-access-to-actor: true
+
       - name: Collect BIDS Dataset
         if: ${{ steps.cache-dataset.outputs.cache-hit != 'true' }} && ${{ !env.ACT }}
         run: openneuro download --snapshot 1.0.1 ds004564 ds004564
@@ -74,9 +81,4 @@ jobs:
       - name: Check Dataset with JS Validator
         run: bids-validator ds004564
 
-      - name: Debug
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
-        timeout-minutes: 15
-        with:
-          limit-access-to-actor: true
+   
