@@ -66,6 +66,7 @@ jobs:
       - name: Install OpenNeuro CLI
         run: | 
           npm install -g @openneuro/cli
+          cp ${{ github.workspace }}/.openneuro ~/.openneuro
           apikey="$(jq '.apikey = "${{ secrets.OPENNEURO_API_KEY }}"' ~/.openneuro)" 
           echo -E "$apikey" > ~/.openneuro
 
