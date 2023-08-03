@@ -54,6 +54,10 @@ def test_collect_bids_ignored(tmp_bids_dir):
 
 
 def test_add_in_valid_bids_and_ignore(tmp_bids_dir):
+    """
+    This test will add in two subjects to a valid BIDS Dataset (ds004564) that are
+    also valid bids and add their entries into the .bidsignore file.
+    """
     # copy over subjects from testdata folder
     shutil.copytree(Path(__file__).parent / "testdata" / 'eeg_matchingpennies' / 'sub-05', tmp_bids_dir / "sub-05")
     shutil.copytree(Path(__file__).parent / "testdata" / 'eeg_matchingpennies' / 'sub-06', tmp_bids_dir / "sub-06")
@@ -78,3 +82,24 @@ def test_add_in_valid_bids_and_ignore(tmp_bids_dir):
     assert len(valid_bids_files) == 20
     assert len(valid_bids_files) != num_bids_validator_found
     assert len(invalid_bids_files) == 1 and invalid_bids_files[0] == os.sep + '.bidsignore'
+
+
+
+
+def test_valid_bids_files():
+    """
+    Test all files that don't fall under the category of being in the .bidsignored and are valid
+    """
+    pass
+
+
+def test_bids_ignored_does_not_exist():
+    pass
+
+
+def test_files_that_are_not_bids_and_bids_ignored():
+    pass
+
+
+def test_files_are_bids_and_bids_ignored():
+    pass

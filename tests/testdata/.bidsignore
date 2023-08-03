@@ -1,4 +1,15 @@
-test_folder
-test_folder/test_file.txt
+# files at root level
 random_file.txt
+
+# files in folders
+test_folder/test_file.txt
 sub-VALID01_ses-ignored_bold.nii.gz
+
+# strictly folders
+test_folder
+
+# Globbing
+*ses-imnotbids*
+*sub-VALID01*
+
+

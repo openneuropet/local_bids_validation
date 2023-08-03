@@ -5,6 +5,7 @@ from typing import Union
 from pathlib import Path
 import json
 import subprocess
+import glob
 
 
 def collect_data_set(curl_download_file):
@@ -73,6 +74,22 @@ def collect_bidsignored(input_folder: Union[str, Path]) -> list:
         print("No .bidsignore file found")
 
     return ignored
+
+def expand_bids_ignored(ignored: list, root_path: Union[str, Path]) -> list:
+    """given a bidsignore file, expand the entries to include all files that match the pattern"""
+    expanded_paths = []
+    for entry in ignored:
+        if '*' in entry:
+            matching_paths = glob.glob(Path(root_path) / entry)
+            for path in matching_paths:
+                expanded_paths.append(path)
+        else:
+            pass
+
+    # create a set from the expanded paths to remove duplicates
+    expanded_paths = set(expanded_paths)
+
+    return list(expanded_paths)
 
 
 def determine_if_file_is_ignored(validity: dict, bidsignore: list) -> dict:
