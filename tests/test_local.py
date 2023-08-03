@@ -5,6 +5,7 @@ import subprocess
 from pathlib import Path
 import os
 
+
 # create a temporary folder with a few files in it as a pytest fixture
 @pytest.fixture(scope="session")
 def tmp_bids_dir(tmpdir_factory):
@@ -54,13 +55,17 @@ def test_collect_bids_ignored(tmp_bids_dir):
 
 
 def test_add_in_valid_bids_and_ignore(tmp_bids_dir):
+    """
+    This test will add in two subjects to a valid BIDS Dataset (ds004564) that are
+    also valid bids and add their entries into the .bidsignore file.
+    """
     # copy over subjects from testdata folder
     shutil.copytree(Path(__file__).parent / "testdata" / 'eeg_matchingpennies' / 'sub-05', tmp_bids_dir / "sub-05")
     shutil.copytree(Path(__file__).parent / "testdata" / 'eeg_matchingpennies' / 'sub-06', tmp_bids_dir / "sub-06")
     # update bidsignore to include sub-05 and sub-06
     with open(Path(tmp_bids_dir / '.bidsignore'), 'w') as outfile:
-        outfile.write('sub-05\n')
-        outfile.write('sub-06\n')
+        outfile.write('sub-05*\n')
+        outfile.write('sub-06*\n')
     # create a new manifest
     manifest = local.make_manifest(tmp_bids_dir)
     bids_ignored = local.collect_bidsignored(tmp_bids_dir)
@@ -75,6 +80,46 @@ def test_add_in_valid_bids_and_ignore(tmp_bids_dir):
 
     num_bids_validator_found = local.report_number_of_files_bids_validator_js_found(tmp_bids_dir)
 
+    all_bids_ignored = local.expand_bids_ignored(bids_ignored, tmp_bids_dir)
+
+    for key in check_if_valid.keys():
+        for ignored in all_bids_ignored:
+            if key in ignored:
+                check_if_valid[key]['bidsignored'] = True
+
+    file_lists = local.determine_ignored_files(check_if_valid, all_bids_ignored, print_output=True)
+
+    # count the number of valid but ignored files
+    valid_and_ignored = file_lists['valid_and_ignored']
+    valid_bids_files = file_lists['valid_bids_files']
+    valid_bids_files_not_ignored = file_lists['valid_bids_files_not_ignored']
+    invalid_bids_files_and_ignored = file_lists['invalid_bids_files_and_ignored']
+    invalid_and_ignored = file_lists['invalid_and_ignored']
+
+
+    assert len(valid_and_ignored) == 10
+    assert len(valid_bids_files_not_ignored) == 10
+    assert len(invalid_bids_files) == 1
+    assert len(invalid_bids_files_and_ignored) == 0
     assert len(valid_bids_files) == 20
     assert len(valid_bids_files) != num_bids_validator_found
     assert len(invalid_bids_files) == 1 and invalid_bids_files[0] == os.sep + '.bidsignore'
+
+
+def test_valid_bids_files():
+    """
+    Test all files that don't fall under the category of being in the .bidsignored and are valid
+    """
+    pass
+
+
+def test_bids_ignored_does_not_exist():
+    pass
+
+
+def test_files_that_are_not_bids_and_bids_ignored():
+    pass
+
+
+def test_files_are_bids_and_bids_ignored():
+    pass

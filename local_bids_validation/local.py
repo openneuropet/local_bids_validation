@@ -1,10 +1,11 @@
 from argparse import ArgumentParser
 from bids_validator import BIDSValidator
-from os import walk, sep, listdir
+from os import walk, sep, listdir, path
 from typing import Union
 from pathlib import Path
 import json
 import subprocess
+import glob
 
 
 def collect_data_set(curl_download_file):
@@ -72,25 +73,129 @@ def collect_bidsignored(input_folder: Union[str, Path]) -> list:
         ignored = []
         print("No .bidsignore file found")
 
+    pop_index = []
+    for entry in ignored:
+        if entry.startswith('#'):
+            pop_index.append(entry)
+        elif entry == '':
+            pop_index.append(entry)
+
+    for index in pop_index:
+        ignored.remove(index)
+
     return ignored
 
 
-def determine_if_file_is_ignored(validity: dict, bidsignore: list) -> dict:
+def expand_bids_ignored(ignored: list, root_path: Union[str, Path]) -> list:
+    """given a bidsignore file, expand the entries to include all files that match the pattern"""
+    expanded_paths = []
+    for entry in ignored:
+        if '*' in entry:
+            matching_paths = glob.glob(str(Path(root_path) / entry))
+            for path in matching_paths:
+                if Path(path).is_dir():
+                    # if the path is a directory, add a trailing slash
+                    for root, dirs, files in walk(path):
+                        for file in files:
+                            expanded_paths.append(str(Path(root) / file))
+                if Path(path).is_file():
+                    expanded_paths.append(path)
+        else:
+            pass
+
+    # create a set from the expanded paths to remove duplicates
+    expanded_paths = set(expanded_paths)
+
+    return list(expanded_paths)
+
+
+def determine_ignored_files(validity: dict, bidsignore: list, print_output=False) -> dict:
     """
     Given a dict from check_bids_valid, determine if the valid file falls under the scope of the .bidsignore file
     """
-    for k, v in validity.items():
-        print(f"{k}: {v}")
+    common_path = path.commonpath(bidsignore)
+    all_bids_ignored = expand_bids_ignored(bidsignore, common_path)
 
+    for key in validity.keys():
+        for ignored in all_bids_ignored:
+            if key in ignored:
+                validity[key]['bidsignored'] = True
+
+        # count the number of valid but ignored files
+    valid_and_ignored = []
+    valid_bids_files = []
+    valid_bids_files_not_ignored = []
+    invalid_bids_files_and_ignored = []
+    invalid_and_not_ignored = []
+
+    for k, v in validity.items():
+        if v['ValidBids'] and v['bidsignored']:
+            valid_and_ignored.append(k)
+        if v['ValidBids']:
+            valid_bids_files.append(k)
+        if v['ValidBids'] and not v['bidsignored']:
+            valid_bids_files_not_ignored.append(k)
+        if not v['ValidBids'] and v['bidsignored']:
+            invalid_bids_files_and_ignored.append(k)
+        if not v['ValidBids'] and not v['bidsignored']:
+            invalid_and_not_ignored.append(k)
+
+    output = {
+        'valid_and_ignored': valid_and_ignored,
+        'valid_bids_files': valid_bids_files,
+        'valid_bids_files_not_ignored': valid_bids_files_not_ignored,
+        'invalid_bids_files_and_ignored': invalid_bids_files_and_ignored,
+        'invalid': invalid_and_not_ignored
+    }
+
+    if print_output:
+        for k, v in output.items():
+            print(f"Found {len(v)} files that are {k}")
+            for file in v:
+                print(file)
+            print("\n")
+
+    return output
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("input-folder", help="input folder to check for bids files", type=str)
+    parser.add_argument("--show-valid-and-ignored", help="show all valid and ignored files", action="store_true")
+    parser.add_argument("--show-valid-bids-files", help="show all valid bids files", action="store_true")
+    parser.add_argument("--show-valid-bids-files-not-ignored", help="show all valid bids files that are not ignored",
+                        action="store_true")
+    parser.add_argument("--show-invalid-bids-files-and-ignored", help="show all invalid bids files that are ignored",
+                        action="store_true")
+    parser.add_argument("--show-invalid-and-not-ignored", help="show all invalid and ignored files", action="store_true")
+
     args = parser.parse_args()
     manifest = make_manifest(args.input_folder)
     check_if_valid = check_bids_valid(manifest)
+    bidsignore = collect_bidsignored(args.input_folder)
+    output = determine_ignored_files(check_if_valid, bidsignore, print_output=False)
+    if not args.show_valid_and_ignored and not args.show_valid_bids_files and not args.show_valid_bids_files_not_ignored and not args.show_invalid_bids_files_and_ignored and not args.show_invalid_and_ignored:
+        output = determine_ignored_files(check_if_valid, bidsignore, print_output=True)
+    elif args.show_valid_and_ignored:
+        print("Found the following valid and ignored files:")
+        for file in output.get('valid_and_ignored'):
+            print(file)
+    elif args.show_valid_bids_files:
+        print("Found the following valid bids files:")
+        for file in output.get('valid_bids_files'):
+            print(file)
+    elif args.show_valid_bids_files_not_ignored:
+        print("Found the following valid bids files that are not ignored:")
+        for file in output.get('valid_bids_files_not_ignored'):
+            print(file)
+    elif args.show_invalid_bids_files_and_ignored:
+        print("Found the following invalid bids files that are ignored:")
+        for file in output.get('invalid_bids_files_and_ignored'):
+            print(file)
+    elif args.show_invalid_and_ignored:
+        print("Found the following invalid and ignored files:")
+        for file in output.get('invalid'):
+            print(file)
+    else:
+        pass
 
-
-
-    print("stop")
