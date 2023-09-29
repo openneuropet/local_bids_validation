@@ -37,9 +37,9 @@ def test_check_bids_valid(tmp_bids_dir):
     valid_bids_files = []
     invalid_bids_files = []
     for file, validity in check_if_valid.items():
-        if validity['ValidBids']:
+        if validity['ValidBIDS']:
             valid_bids_files.append(file)
-        if not validity['ValidBids']:
+        if not validity['ValidBIDS']:
             invalid_bids_files.append(file)
     assert len(valid_bids_files) == 10
     assert len(invalid_bids_files) == 0
@@ -73,9 +73,9 @@ def test_add_in_valid_bids_and_ignore(tmp_bids_dir):
     valid_bids_files = []
     invalid_bids_files = []
     for file, validity in check_if_valid.items():
-        if validity['ValidBids']:
+        if validity['ValidBIDS']:
             valid_bids_files.append(file)
-        if not validity['ValidBids']:
+        if not validity['ValidBIDS']:
             invalid_bids_files.append(file)
 
     num_bids_validator_found = local.report_number_of_files_bids_validator_js_found(tmp_bids_dir)
@@ -94,7 +94,7 @@ def test_add_in_valid_bids_and_ignore(tmp_bids_dir):
     valid_bids_files = file_lists['valid_bids_files']
     valid_bids_files_not_ignored = file_lists['valid_bids_files_not_ignored']
     invalid_bids_files_and_ignored = file_lists['invalid_bids_files_and_ignored']
-    invalid_and_ignored = file_lists['invalid_and_ignored']
+    invalid = file_lists['invalid']
 
 
     assert len(valid_and_ignored) == 10
@@ -113,13 +113,25 @@ def test_valid_bids_files():
     pass
 
 
-def test_bids_ignored_does_not_exist():
-    pass
+def test_bids_ignored_does_not_exist(tmp_bids_dir):
+    os.remove(Path(tmp_bids_dir / '.bidsignore'))
+    collect_dne = local.collect_bidsignored(tmp_bids_dir)
+    assert collect_dne == []
 
 
-def test_files_that_are_not_bids_and_bids_ignored():
-    pass
+def test_files_that_are_not_bids_and_bids_ignored(tmp_bids_dir):
+    # create some non-bids files
+    non_bids_files = ["notbids.blah", "notbids2.blah", "sub-10_mum.nii.gz"]
+    for f in non_bids_files:
+        Path(tmp_bids_dir / f).touch()
+    
+    # add them to the bidsignore
+    with open(Path(tmp_bids_dir / '.bidsignore'), 'a') as outfile:
+        outfile.write('notbids*\n')
+        outfile.write('sub-10*\n')
 
+    ignored_files = local.run_all(tmp_bids_dir)
+    assert len(ignored_files.get('invalid_bids_files_and_ignored')) == 3
 
 def test_files_are_bids_and_bids_ignored():
     pass
